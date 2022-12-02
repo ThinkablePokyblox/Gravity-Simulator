@@ -1,11 +1,13 @@
-# Imports #
+# Imports
 import pygame
 import math
 import random
-# Variables #
-WINDOW_SIZE = (500, 500)
-Objects = []
-TIMESTEP = 0.01
+pygame.init()
+# Config
+WIDTH, HEIGHT = 500, 500
+WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+FONT = pygame.font.SysFont("comicsans", 16)
+pygame.display.set_caption("Planet Simulation")
 # Color (RGB)
 COLORS = [
     (255, 255, 255),
@@ -19,171 +21,195 @@ COLORS = [
     (102, 255, 255),
     (13, 0, 77)
 ]
-# Functions #
+WHITE = (255, 255, 255)
+YELLOW = (255, 200, 0)
+BLUE = (100, 149, 237)
+RED = (188, 39, 50)
+DARK_GREY = (80, 78, 81)
+GREEN = (140, 255, 140)
+BROWN = (153, 77, 0)
+LIGHTBROWN = (255, 217, 179)
+LIGHTBLUE = (102, 255, 255)
+DARKBLUE = (13, 0, 77)
+# Functions
+def Calculate_Orbital_Radius(A, P):
+    return 1/2 * (A + P)
+def Calculate_Orbital_Velocity(G, CentralBodyMass, A, P):
+    return math.sqrt(G * CentralBodyMass / Calculate_Orbital_Radius(A, P))
 def ConvertTime(Time):
     Unit = "Seconds"
-    if Time >= 60: # Minute
+    if Time >= 60:  # Minute
         Time /= 60
         Unit = "Minute"
-        if Time >= 60: # Hour
+        if Time >= 60:  # Hour
             Time /= 60
             Unit = "Hour"
-            if Time >= 24: # Day
+            if Time >= 24:  # Day
                 Time /= 24
                 Unit = "Day"
-                if Time >= 30: # Month
+                if Time >= 30:  # Month
                     Time /= 30
                     Unit = "Month"
-                    if Time >= 12: # Year
+                    if Time >= 12:  # Year
                         Time /= 12
                         Unit = "Year"
     return round(Time), Unit
-# Main #
-pygame.init()
-WINDOW = pygame.display.set_mode(WINDOW_SIZE)
-FONT = pygame.font.SysFont("comicsans", 16)
-pygame.display.set_caption("Planet Simulation")
-#
-class object:
+# Classes
+class Planet:
 
-    AU = 146*10**9
-    G = 6.67428e-11
-    GameScale = 1 / AU
-    TIMESTEP = 160
+	AU = 146*10**9
+	G = 6.67428e-11
+	GameScale = 1 / AU
+	TIMESTEP = 86400
 
-    def __init__(self):
-        self.mass = 0
-        self.radius = 0
-        self.x = 0
-        self.y = 0
-        self.xVelocity = 0
-        self.yVelocity = 0
-        self.color = None
+	def __init__(self):
+		self.x = 0
+		self.y = 0
+		self.radius = 0
+		self.color = None
+		self.mass = 0
 
-    def draw(self, win):
-        x = self.x
-        y = self.y
-        pygame.draw.circle(win, self.color, (x, y),(self.radius) * object.GameScale)
+		self.orbit = []
+		self.distance_to_sun = 0
+		self.PositionLocked = False
 
-    def attraction(self, other):
-        other_x, other_y = other.x, other.y
-        distance_x = other_x - self.x
-        distance_y = other_y - self.y
-        distance = math.sqrt(distance_x ** 2 + distance_y ** 2)
+		self.x_vel = 0
+		self.y_vel = 0
 
-        force = object.G * self.mass * other.mass / distance**2
-        theta = math.atan2(distance_y, distance_x)
-        force_x = math.cos(theta) * force
-        force_y = math.sin(theta) * force
-        return force_x, force_y
+	def draw(self, win):
+		x = self.x * Planet.GameScale + WIDTH / 2
+		y = self.y * Planet.GameScale + HEIGHT / 2
+		pygame.draw.circle(win, self.color, (x, y),(self.radius) * (Planet.GameScale))
 
-    def update_position(self, planets):
-        total_fx = total_fy = 0
-        for planet in planets:
-            if self == planet:
-                continue
+	def attraction(self, other):
+		other_x, other_y = other.x, other.y
+		distance_x = other_x - self.x
+		distance_y = other_y - self.y
+		distance = math.sqrt(distance_x ** 2 + distance_y ** 2)
 
-            fx, fy = self.attraction(planet)
-            total_fx += fx
-            total_fy += fy
+		force = Planet.G * self.mass * other.mass / distance**2
+		theta = math.atan2(distance_y, distance_x)
+		force_x = math.cos(theta) * force
+		force_y = math.sin(theta) * force
+		return force_x, force_y
 
-        self.xVelocity += total_fx / self.mass * object.TIMESTEP
-        self.yVelocity += total_fy / self.mass * object.TIMESTEP
-        self.x += self.xVelocity * object.TIMESTEP
-        self.y += self.yVelocity * object.TIMESTEP
+	def update_position(self, planets):
+		if self.PositionLocked == False:
+			total_fx = total_fy = 0
+			for planet in planets:
+				if self == planet:
+					continue
 
+				fx, fy = self.attraction(planet)
+				total_fx += fx
+				total_fy += fy
 
-def startGame():
-    run = True
-    clock = pygame.time.Clock()
+			self.x_vel += total_fx / self.mass * Planet.TIMESTEP
+			self.y_vel += total_fy / self.mass * Planet.TIMESTEP
 
-    mouseDown = False
-    grow = False
-    curentObject = None
-    settingSpeed = False
-    scroll = 1
+			self.x += self.x_vel * Planet.TIMESTEP
+			self.y += self.y_vel * Planet.TIMESTEP
+			self.orbit.append((self.x, self.y))
+# Main
+def main():
+	run = True
+	clock = pygame.time.Clock()
 
-    while run:
-        WINDOW.fill((0, 0, 0))
-        clock.tick(60)
+	planets = []
+	
+	mouseDown = False
+	grow = False
+	curentObject = None
+	settingSpeed = False
 
-        Fps = round(clock.get_fps())
-        FpsText = ""
-        if Fps >= 50:
-            FpsText = FONT.render(f"{Fps} FPS", 1, (140,255,140))
-        elif Fps >= 30 and Fps < 50:
-            FpsText = FONT.render(f"{Fps} FPS", 1, (255, 200, 0))
-        elif Fps < 30:
-            FpsText = FONT.render(f"{Fps} FPS", 1, (188, 39, 50))
-        WINDOW.blit(FpsText, (0,0))
-		
-        Time = ConvertTime(object.TIMESTEP)
-        TimeText = FONT.render(f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, (255,255,255))
-        WINDOW.blit(TimeText, (0,FpsText.get_height()))
+	scroll = 45461813.317888215
+	while run:
+		clock.tick(60)
+		WIN.fill((0, 0, 0))
 
-        object.GameScale = scroll / object.AU
+		Fps = round(clock.get_fps())
+		FpsText = ""
+		if Fps >= 50:
+			FpsText = FONT.render(f"{Fps} FPS", 1, GREEN)
+		elif Fps >= 30 and Fps < 50:
+			FpsText = FONT.render(f"{Fps} FPS", 1, YELLOW)
+		elif Fps < 30:
+			FpsText = FONT.render(f"{Fps} FPS", 1, RED)
+		WIN.blit(FpsText, (0, 0))
 
-        for event in pygame.event.get():
+		Time = ConvertTime(Planet.TIMESTEP)
+		TimeText = FONT.render(
+		    f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, WHITE)
+		WIN.blit(TimeText, (0, FpsText.get_height()))
+
+		Planet.GameScale = scroll / Planet.AU
+
+		for event in pygame.event.get():
             # Quit
-            if event.type == pygame.QUIT:
-                run = False
+			if event.type == pygame.QUIT:
+				run = False
             # Mouse Hold
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 4:
-                    scroll *= 1.1
-                elif event.button == 5:
-                    scroll /= 1.1
-                mouseDown = True
-                curentObject = object()
-                curentObject.color = COLORS[random.randrange(0, len(COLORS))]
-            elif event.type == pygame.MOUSEBUTTONUP:
-                mouseDown = False
-                settingSpeed = False
-                grow = False
-                if not curentObject.radius == 0:
-                    Objects.append(curentObject)
-                    curentObject = None
+			elif event.type == pygame.MOUSEBUTTONDOWN:
+				if event.button == 4:
+					scroll *= 1.1
+				elif event.button == 5:
+					scroll /= 1.1
+				mouseDown = True
+				curentObject = Planet()
+				curentObject.color = COLORS[random.randrange(0, len(COLORS))]
+			elif event.type == pygame.MOUSEBUTTONUP:
+				mouseDown = False
+				settingSpeed = False
+				grow = False
+				if not curentObject.radius == 0:
+					planets.append(curentObject)
+					curentObject = None
             # Key Hold
-            elif event.type == pygame.KEYDOWN:
+			elif event.type == pygame.KEYDOWN:
                 # Q
-                if mouseDown == True and event.key == pygame.K_q:
-                    grow = True
+				if mouseDown == True and event.key == pygame.K_q:
+					grow = True
                 # E
-                elif mouseDown == True and event.key == pygame.K_e:
-                    settingSpeed = True
-            elif event.type == pygame.KEYUP:
+				elif mouseDown == True and event.key == pygame.K_e:
+					settingSpeed = True
+				# L
+				elif mouseDown == True and event.key == pygame.K_l:
+					if curentObject.PositionLocked == True:
+						curentObject.PositionLocked = False
+					else:
+						curentObject.PositionLocked = True
+			elif event.type == pygame.KEYUP:
                 # Q
-                if mouseDown == True and event.key == pygame.K_q:
-                    grow = False
+				if mouseDown == True and event.key == pygame.K_q:
+					grow = False
                 # E
-                elif mouseDown == True and event.key == pygame.K_e:
-                    settingSpeed = False
+				elif mouseDown == True and event.key == pygame.K_e:
+					settingSpeed = False
             # End
         # Object Creation
-        if grow == True and settingSpeed == False and curentObject:
-            mousePos = pygame.mouse.get_pos()
-            curentObject.x = mousePos[0] 
-            curentObject.y = mousePos[1] 
-            curentObject.radius = curentObject.radius + (0.5 / object.GameScale)
-            curentObject.mass = curentObject.mass + 1000000
-            curentObject.draw(WINDOW)
-        elif grow == False and settingSpeed == False and curentObject:
-            mousePos = pygame.mouse.get_pos()
-            curentObject.x = mousePos[0]
-            curentObject.y = mousePos[1]
-            curentObject.draw(WINDOW)
-        elif grow == False and settingSpeed == True and curentObject:
-            mousePos = pygame.mouse.get_pos()
-            curentObject.xVelocity = (curentObject.x - mousePos[0]) / 1000
-            curentObject.yVelocity = (curentObject.y - mousePos[1]) / 1000
-            print(curentObject.xVelocity)
-            print(curentObject.yVelocity)
-            curentObject.draw(WINDOW)
+		if grow == True and settingSpeed == False and curentObject:
+			mousePos = pygame.mouse.get_pos()
+			curentObject.x = (mousePos[0] - WIDTH/2) * Planet.AU / scroll
+			curentObject.y = (mousePos[1] - HEIGHT/2) * Planet.AU / scroll
+			curentObject.radius += 1000
+			curentObject.mass += 1000000
+			curentObject.draw(WIN)
+		elif grow == False and settingSpeed == False and curentObject:
+			mousePos = pygame.mouse.get_pos()
+			curentObject.x = (mousePos[0] - WIDTH/2) * Planet.AU / scroll
+			curentObject.y = (mousePos[1] - HEIGHT/2) * Planet.AU / scroll
+			curentObject.draw(WIN)
+		elif grow == False and settingSpeed == True and curentObject:
+			mousePos = pygame.mouse.get_pos()
+			curentObject.x_vel = (((curentObject.x / Planet.AU) + WIDTH / 2) - mousePos[0]) / 1000
+			curentObject.y_vel = (((curentObject.y / Planet.AU) + HEIGHT / 2) - mousePos[1]) / 1000
+			curentObject.draw(WIN)
         # Making already existing objects
-        for Object in Objects:
-            Object.update_position(Objects)
-            Object.draw(WINDOW)
+		for planet in planets:
+			planet.update_position(planets)
+			planet.draw(WIN)
+			
+		pygame.display.update()
 
-        pygame.display.update()
-
-startGame()
+	pygame.quit()
+main()
