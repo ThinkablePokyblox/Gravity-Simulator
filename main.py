@@ -187,7 +187,7 @@ def main():
 				# ,
 				elif mouseDown == False and event.key == pygame.K_COMMA:
 					if SpeedTimeUp == False:
-						SlowTimeDown == True
+						SlowTimeDown = True
 			elif event.type == pygame.KEYUP:
                 # Q
 				if mouseDown == True and event.key == pygame.K_q:
@@ -202,7 +202,7 @@ def main():
 				# ,
 				elif mouseDown == False and event.key == pygame.K_COMMA:
 					if SpeedTimeUp == False:
-						SlowTimeDown == False
+						SlowTimeDown = False
 		# Time Control
 		if SpeedTimeUp == True:
 			ExactTimeText = FONT.render(f"{Planet.TIMESTEP} Seconds passes Every Second", 1, WHITE)
