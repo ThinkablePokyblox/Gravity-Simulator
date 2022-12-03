@@ -140,8 +140,7 @@ def main():
 		WIN.blit(FpsText, (0, 0))
 
 		Time = ConvertTime(Planet.TIMESTEP)
-		TimeText = FONT.render(
-		    f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, WHITE)
+		TimeText = FONT.render(f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, WHITE)
 		WIN.blit(TimeText, (0, FpsText.get_height()))
         
 		Planet.GameScale = scroll / Planet.AU
