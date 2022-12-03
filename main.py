@@ -218,7 +218,6 @@ def main():
 			curentObject.y = (mousePos[1] - HEIGHT/2) * Planet.AU / scroll
 			curentObject.radius += 100
 			curentObject.mass += 1 * 10 ** 10
-			print(curentObject.mass)
 			curentObject.draw(WIN)
 		elif grow == False and settingSpeed == False and curentObject:
 			mousePos = pygame.mouse.get_pos()

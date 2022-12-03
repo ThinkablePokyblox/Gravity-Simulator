@@ -27,7 +27,7 @@ This is just a simple 2d simulation of the planets.
       + Planet Speed controling..
       ```
 # Controls
-- Click + Hold to create planet
+- Click + Hold + Q to create planet
 - Scroll wheel for zooming
 - "<>" to control time
 - Click + hold (while creating planet) + e and drag mouse away from planet to set speed.
