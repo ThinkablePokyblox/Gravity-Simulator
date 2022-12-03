@@ -60,7 +60,7 @@ class Planet:
 	AU = 146*10**9
 	G = 6.67428e-11
 	GameScale = 1 / AU
-	TIMESTEP = 86400
+	TIMESTEP = 3600
 
 	def __init__(self):
 		self.x = 0
@@ -121,6 +121,8 @@ def main():
 	grow = False
 	curentObject = None
 	settingSpeed = False
+	SpeedTimeUp = False
+	SlowTimeDown = False
 
 	scroll = 45461813.317888215
 	while run:
@@ -141,7 +143,7 @@ def main():
 		TimeText = FONT.render(
 		    f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, WHITE)
 		WIN.blit(TimeText, (0, FpsText.get_height()))
-
+        
 		Planet.GameScale = scroll / Planet.AU
 
 		for event in pygame.event.get():
@@ -178,6 +180,14 @@ def main():
 						curentObject.PositionLocked = False
 					else:
 						curentObject.PositionLocked = True
+				# .
+				elif mouseDown == False and event.key == pygame.K_PERIOD:
+					if SlowTimeDown == False:
+						SpeedTimeUp = True
+				# ,
+				elif mouseDown == False and event.key == pygame.K_COMMA:
+					if SpeedTimeUp == False:
+						SlowTimeDown == True
 			elif event.type == pygame.KEYUP:
                 # Q
 				if mouseDown == True and event.key == pygame.K_q:
@@ -185,14 +195,31 @@ def main():
                 # E
 				elif mouseDown == True and event.key == pygame.K_e:
 					settingSpeed = False
-            # End
+				# .
+				elif mouseDown == False and event.key == pygame.K_PERIOD:
+					if SlowTimeDown == False:
+						SpeedTimeUp = False
+				# ,
+				elif mouseDown == False and event.key == pygame.K_COMMA:
+					if SpeedTimeUp == False:
+						SlowTimeDown == False
+		# Time Control
+		if SpeedTimeUp == True:
+			ExactTimeText = FONT.render(f"{Planet.TIMESTEP} Seconds passes Every Second", 1, WHITE)
+			WIN.blit(ExactTimeText, (0, TimeText.get_height() + FpsText.get_height()))
+			Planet.TIMESTEP += 10
+		elif SlowTimeDown == True:
+			ExactTimeText = FONT.render(f"{Planet.TIMESTEP} Seconds passes Every Second", 1, WHITE)
+			WIN.blit(ExactTimeText, (0, TimeText.get_height() + FpsText.get_height()))
+			Planet.TIMESTEP -= 10
         # Object Creation
 		if grow == True and settingSpeed == False and curentObject:
 			mousePos = pygame.mouse.get_pos()
 			curentObject.x = (mousePos[0] - WIDTH/2) * Planet.AU / scroll
 			curentObject.y = (mousePos[1] - HEIGHT/2) * Planet.AU / scroll
-			curentObject.radius += 1000
-			curentObject.mass += 1000000
+			curentObject.radius += 100
+			curentObject.mass += 1 * 10 ** 10
+			print(curentObject.mass)
 			curentObject.draw(WIN)
 		elif grow == False and settingSpeed == False and curentObject:
 			mousePos = pygame.mouse.get_pos()
@@ -201,8 +228,8 @@ def main():
 			curentObject.draw(WIN)
 		elif grow == False and settingSpeed == True and curentObject:
 			mousePos = pygame.mouse.get_pos()
-			curentObject.x_vel = (((curentObject.x / Planet.AU) + WIDTH / 2) - mousePos[0]) / 1000
-			curentObject.y_vel = (((curentObject.y / Planet.AU) + HEIGHT / 2) - mousePos[1]) / 1000
+			curentObject.x_vel = (((curentObject.x / Planet.AU * scroll) + WIDTH / 2) - mousePos[0]) / 1000
+			curentObject.y_vel = (((curentObject.y / Planet.AU * scroll) + HEIGHT / 2) - mousePos[1]) / 1000
 			curentObject.draw(WIN)
         # Making already existing objects
 		for planet in planets:
