@@ -110,13 +110,29 @@ class Planet:
 			self.x += self.x_vel * Planet.TIMESTEP
 			self.y += self.y_vel * Planet.TIMESTEP
 			self.orbit.append((self.x, self.y))
+class BackgroundStar:
+	def __init__(self, radius, transparency, color, x, y) -> None:
+		self.radius = radius
+		self.transparency = transparency
+		self.color = color
+		self.x = x
+		self.y = y
+	
+	def draw(self, win):
+		pygame.draw.circle(win, self.color, (self.x, self.y), self.radius)
 # Main
 def main():
 	run = True
 	clock = pygame.time.Clock()
 
 	planets = []
-	
+	backgroundStars = []
+
+	for count in range(random.randrange(20,100)):
+		Star = BackgroundStar(random.randrange(1,2), 1, WHITE, random.randrange(0, WIDTH), random.randrange(0, HEIGHT))
+		backgroundStars.append(Star)
+		
+
 	mouseDown = False
 	grow = False
 	curentObject = None
@@ -230,6 +246,8 @@ def main():
 			curentObject.y_vel = (((curentObject.y / Planet.AU * scroll) + HEIGHT / 2) - mousePos[1]) / 1000
 			curentObject.draw(WIN)
         # Making already existing objects
+		for Star in backgroundStars:
+			Star.draw(WIN)
 		for planet in planets:
 			planet.update_position(planets)
 			planet.draw(WIN)
