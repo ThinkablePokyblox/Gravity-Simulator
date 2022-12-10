@@ -32,10 +32,6 @@ LIGHTBROWN = (255, 217, 179)
 LIGHTBLUE = (102, 255, 255)
 DARKBLUE = (13, 0, 77)
 # Functions
-def Calculate_Orbital_Radius(A, P):
-    return 1/2 * (A + P)
-def Calculate_Orbital_Velocity(G, CentralBodyMass, A, P):
-    return math.sqrt(G * CentralBodyMass / Calculate_Orbital_Radius(A, P))
 def ConvertTime(Time):
     Unit = "Seconds"
     if Time >= 60:  # Minute
@@ -131,8 +127,7 @@ def main():
 	for count in range(random.randrange(20,100)):
 		Star = BackgroundStar(random.randrange(1,2), 1, WHITE, random.randrange(0, WIDTH), random.randrange(0, HEIGHT))
 		backgroundStars.append(Star)
-		
-
+	
 	mouseDown = False
 	grow = False
 	curentObject = None
@@ -141,10 +136,12 @@ def main():
 	SlowTimeDown = False
 
 	scroll = 45461813.317888215
+
 	while run:
+		# Start
 		clock.tick(60)
 		WIN.fill((0, 0, 0))
-
+		# FPS Text
 		Fps = round(clock.get_fps())
 		FpsText = ""
 		if Fps >= 50:
@@ -154,13 +151,32 @@ def main():
 		elif Fps < 30:
 			FpsText = FONT.render(f"{Fps} FPS", 1, RED)
 		WIN.blit(FpsText, (0, 0))
-
+		# Time Text
 		Time = ConvertTime(Planet.TIMESTEP)
 		TimeText = FONT.render(f"{Time[0]} {Time[1]}(s) Passes Every Second", 1, WHITE)
 		WIN.blit(TimeText, (0, FpsText.get_height()))
-        
+        # Game Scale
 		Planet.GameScale = scroll / Planet.AU
+		# Collision Detection
+		for planet in planets:
+			for planet2 in planets:
+				p1 = planet
+				p2 = planet2
 
+			if p1 == p2:
+				continue
+
+			distance = ((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2) ** 0.5
+			if distance <= p1.radius + p2.radius:
+				if p1.mass > p2.mass:
+					planets.remove(p2)
+					p1.mass += p2.mass
+					p1.radius += p2.radius
+				elif p2.mass > p1.mass:
+					planets.remove(p1)
+					p2.mass += p1.mass
+					p2.radius += p1.radius
+		# Events
 		for event in pygame.event.get():
             # Quit
 			if event.type == pygame.QUIT:
@@ -251,8 +267,8 @@ def main():
 		for planet in planets:
 			planet.update_position(planets)
 			planet.draw(WIN)
-			
+		# Update Display	
 		pygame.display.update()
-
+	# Quit
 	pygame.quit()
 main()
