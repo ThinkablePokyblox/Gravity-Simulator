@@ -189,7 +189,7 @@ def main():
 					scroll /= 1.1
 				mouseDown = True
 				curentObject = Planet()
-				curentObject.color = COLORS[random.randrange(0, len(COLORS))]
+				curentObject.color = (random.randrange(0,255), random.randrange(0,255), random.randrange(0,255))
 			elif event.type == pygame.MOUSEBUTTONUP:
 				mouseDown = False
 				settingSpeed = False
